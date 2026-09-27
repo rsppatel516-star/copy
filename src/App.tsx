@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { BrowserRouter, Link, Route, Routes, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, BookOpen, Check, Code2, Copy, GraduationCap, Layers3, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, Code2, Copy, Download, GraduationCap, Layers3, Sparkles } from 'lucide-react'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import Breadcrumb from './components/common/Breadcrumb'
 import EmptyState from './components/common/EmptyState'
 import Navbar from './components/layout/Navbar'
@@ -39,6 +41,8 @@ function App() {
           </Routes>
           <Footer />
         </div>
+        <Analytics />
+        <SpeedInsights />
       </BrowserRouter>
     </ThemeProvider>
   )
@@ -242,8 +246,12 @@ function SubjectPage() {
               </div>
             </Link>
 
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
               <CopyCodeButton code={practical.code} />
+              <DownloadCodeButton
+                code={practical.code}
+                filename={`${subject.slug}-practical-${practical.number.toString().padStart(2, '0')}.${getFileExtension(practical.language)}`}
+              />
             </div>
           </div>
         ))}
@@ -335,6 +343,11 @@ function PracticalPage() {
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Code</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{practical.language}</span>
+                  <DownloadCodeButton
+                    code={practical.code}
+                    filename={`${subject.slug}-practical-${practical.number.toString().padStart(2, '0')}.${getFileExtension(practical.language)}`}
+                    compact
+                  />
                   <CopyCodeButton code={practical.code} compact />
                 </div>
               </div>
@@ -437,6 +450,62 @@ function CopyCodeButton({ code, compact = false }: { code: string; compact?: boo
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}
       {copied ? 'Copied!' : 'Copy this code'}
+    </button>
+  )
+}
+
+function getFileExtension(language: string): string {
+  const lang = language.toLowerCase()
+  if (lang.includes('python')) return 'py'
+  if (lang.includes('sql')) return 'sql'
+  if (lang.includes('java')) return 'java'
+  if (lang.includes('c++') || lang.includes('cpp')) return 'cpp'
+  if (lang.includes('c')) return 'c'
+  if (lang.includes('javascript') || lang.includes('js')) return 'js'
+  if (lang.includes('typescript') || lang.includes('ts')) return 'ts'
+  if (lang.includes('html')) return 'html'
+  if (lang.includes('css')) return 'css'
+  return 'txt'
+}
+
+function DownloadCodeButton({
+  code,
+  filename,
+  compact = false,
+}: {
+  code: string
+  filename: string
+  compact?: boolean
+}) {
+  const handleDownload = () => {
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        handleDownload()
+      }}
+      title={`Download ${filename}`}
+      className={
+        compact
+          ? 'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition duration-200 hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-900 dark:hover:text-indigo-400'
+          : 'inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition duration-200 hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-900 dark:hover:text-indigo-400'
+      }
+    >
+      <Download size={compact ? 13 : 15} />
+      <span>Download</span>
     </button>
   )
 }
